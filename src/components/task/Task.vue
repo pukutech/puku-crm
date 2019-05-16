@@ -1,160 +1,148 @@
 <template>
-  <v-app>
-      <Navbar/>
-    <div>
-
-      <v-content>
-        <v-container fluid grid-list-md>
-          <v-layout>
-                <v-flex>
-                  <v-sheet height="500">
-                    <v-calendar
-                      :now="today"
-                      :value="today"
-                      color="primary"
-                    >
-                      <template v-slot:day="{ date }">
-                        <template v-for="event in eventsMap[date]">
-                          <v-menu
-                            :key="event.title"
-                            v-model="event.open"
-                            full-width
-                            offset-x
-                          >
-                            <template v-slot:activator="{ on }">
-                              <div
-                                v-if="!event.time"
-                                v-ripple
-                                class="my-event"
-                                v-on="on"
-                                v-html="event.title"
-                              ></div>
-                            </template>
-                            <v-card
-                              color="grey lighten-4"
-                              min-width="350px"
-                              flat
-                            >
-                              <v-toolbar
-                                color="primary"
-                                dark
-                              >
-                                <v-btn icon>
-                                  <v-icon>edit</v-icon>
-                                </v-btn>
-                                <v-toolbar-title v-html="event.title"></v-toolbar-title>
-                                <v-spacer></v-spacer>
-                                <v-btn icon>
-                                  <v-icon>favorite</v-icon>
-                                </v-btn>
-                                <v-btn icon>
-                                  <v-icon>more_vert</v-icon>
-                                </v-btn>
-                              </v-toolbar>
-                              <v-card-title primary-title>
-                                <span v-html="event.details"></span>
-                              </v-card-title>
-                              <v-card-actions>
-                                <v-btn
-                                  flat
-                                  color="secondary"
-                                >
-                                  Cancel
-                                </v-btn>
-                              </v-card-actions>
-                            </v-card>
-                          </v-menu>
-                        </template>
-                      </template>
-                    </v-calendar>
-                  </v-sheet>
-                </v-flex>
-              </v-layout>
-        </v-container>
-
-        <!-- Add Task Button  -->
-        <v-btn :to="{name: 'AddTask'}"
-          fab
-          bottom
-          right
-          color="indigo"
-          dark
-          fixed
-        >
-        <v-icon>add</v-icon>
-        </v-btn>
-
-      </v-content>
-    </div>
-  </v-app>
-
-</template>
-
-<script>
-import Navbar from '@/components/navbar/Navbar'
-import db from '@/firebase/init'
-import moment from 'moment'
-export default {
-  name:'Task',
-  components: {
-    Navbar
-  },
-  data(){
-    return{
-      date:[], 
-      today: '2019-05-18',
-      events: [
-        {
-          title: 'Meeting',
-          details: 'Going to the business meeting',
-          date: '2019-05-12',
-          open: false
-        },          
-        {
-          title: 'Vacation',
-          details: 'Going to the beach!',
-          date: '2019-05-13',
-          open: false
-        },       
-      ]
-    }
-  },   
-  computed: {
-      // convert the list of events into a map of lists keyed by date
-      eventsMap () {
-        const map = {}
-        this.events.forEach(e => (map[e.date] = map[e.date] || []).push(e))
-        return map
-      }
-  },
-  methods:{      
-      open (event) {
-        alert(event.title)
-      }
-  },
+    <v-app>
   
-}
-</script>
-
-<style>
-tbody a{
-  font-size: 13px;
-  color:black;
-  text-decoration: underline;
-}
-
-.my-event {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    border-radius: 2px;
-    background-color: #1867c0;
-    color: #ffffff;
-    border: 1px solid #1867c0;
-    width: 100%;
-    font-size: 12px;
-    padding: 3px;
-    cursor: pointer;
-    margin-bottom: 1px;
+        <Navbar/>
+      <div>
+  
+        <v-content>
+          <v-container fluid grid-list-md>
+                <v-data-iterator
+                  :items="tasks"
+                  :rows-per-page-items="rowsPerPageItems"
+                  :pagination.sync="pagination"
+                  content-tag="v-layout"
+                  row
+                  wrap
+                >
+                <v-flex
+                  slot="item"
+                  slot-scope="props"
+                  xs12
+                  sm6
+                  md4
+                  lg3
+                >
+                <v-card>
+                  <v-card-title>
+                      <h4>{{ props.item.title }}</h4>                
+                  </v-card-title>
+                  <v-divider></v-divider>
+                  <v-list dense>
+                    <v-list-tile>
+                      <v-list-tile-content>Date:</v-list-tile-content>
+                      <v-list-tile-content class="align-end">{{ props.item.date }}</v-list-tile-content>
+                    </v-list-tile>
+                    <v-list-tile>
+                      <v-list-tile-content>Time:</v-list-tile-content>
+                      <v-list-tile-content class="align-end">{{ props.item.time }}</v-list-tile-content>
+                    </v-list-tile>
+                    <v-list-tile>
+                      <v-list-tile-content>Priority:</v-list-tile-content>
+                      <v-list-tile-content class="align-end" v-if="props.item.priority">{{ props.item.priority.text }}</v-list-tile-content>
+                    </v-list-tile>
+                    <v-list-tile>
+                      <v-list-tile-content>Status:</v-list-tile-content>
+                      <v-list-tile-content class="align-end" v-if="props.item.status">{{ props.item.status.text }}</v-list-tile-content>
+                    </v-list-tile>
+                    <v-list-tile>
+                      <v-list-tile-content><i>{{props.item.details}}</i></v-list-tile-content>
+                    </v-list-tile>
+  
+                    <v-list-tile>
+                      <v-list-tile-content class="align-end">
+                        <router-link style="color:green" :to="{ name: 'EditTask', params: {id:props.item.id} }">
+                          <span v-on:click="">Edit</span>
+                        </router-link>
+                        <span style="color:red" v-on:click="removeTask(props.item.id)">Delete</span>
+                      </v-list-tile-content>
+                    </v-list-tile>
+                  </v-list>
+                </v-card>
+              </v-flex>
+            </v-data-iterator>
+          </v-container>
+  
+          <!-- Add Task Button  -->
+          <v-btn :to="{name: 'AddTask'}"
+            fab
+            bottom
+            right
+            color="indigo"
+            dark
+            fixed
+          >
+          <v-icon>add</v-icon>
+          </v-btn>
+  
+        </v-content>
+      </div>
+    </v-app>
+  
+  </template>
+  
+  <script>
+  import Navbar from '@/components/navbar/Navbar'
+  import db from '@/firebase/init'
+  import moment from 'moment'
+  export default {
+    name:'Task',
+    components: {
+      Navbar
+    },
+    data(){
+        return{
+            rowsPerPageItems: [8, 16, 24],
+            pagination: {
+            rowsPerPage: 8
+            },
+            tasks: []
+      }
+    },
+    methods:{
+        removeTask(id){
+          var result = confirm("Want to delete ?");
+          if (result) {
+            db.collection('task').doc(id).delete().then(() => {
+              this.tasks = this.tasks.filter(task => {
+                return task.id != id
+              })
+            })
+          }
+        }
+    },
+    created(){
+  
+        // Show All Leads
+        let ref = db.collection('task').orderBy('timestamp', 'desc')
+  
+        ref.onSnapshot(snapshot => {
+          snapshot.docChanges().forEach(change => {
+            if(change.type == 'added'){
+              let doc = change.doc
+              this.tasks.push({
+                id:doc.id,
+                title:doc.data().title,
+                date:doc.data().date,
+                time:doc.data().time,
+                priority:doc.data().priority,
+                status:doc.data().status,
+                details:doc.data().details,
+                note:doc.data().note,
+                timestamp:moment(doc.data().timestamp).fromNow('lll')
+              })
+            }
+          })
+        })
+       }
   }
-</style>
+  </script>
+  
+  <style>
+  tbody a{
+    font-size: 13px;
+    color:black;
+    text-decoration: underline;
+  }
+  
+  </style>
+  

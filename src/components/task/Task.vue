@@ -51,7 +51,7 @@
                     <v-list-tile>
                       <v-list-tile-content class="align-end">
                         <router-link style="color:green" :to="{ name: 'EditTask', params: {id:props.item.id} }">
-                          <span v-on:click="">Edit</span>
+                          Edit
                         </router-link>
                         <span style="color:red" v-on:click="removeTask(props.item.id)">Delete</span>
                       </v-list-tile-content>
@@ -110,6 +110,9 @@
           }
         }
     },
+    clickEdit(){
+        console.log("Edit Task");        
+    },    
     created(){
   
         // Show All Leads
@@ -142,7 +145,6 @@
     font-size: 13px;
     color:black;
     text-decoration: underline;
-  }
-  
+  }  
   </style>
   
